@@ -21,11 +21,12 @@ import time
 from abc import ABC
 from typing import Callable
 
+from dm_job_utilities.cli import ProgressReporter, add_reporting_args
 from dm_job_utilities.dm_log import DmLog
+from dm_job_utilities.utils import expand_path, is_type, log, read_delimiter
 from rdkit import Chem
 
 import rdkit_utils
-import utils
 
 
 class AbstractCalculator(ABC):
@@ -47,7 +48,7 @@ class AbstractCalculator(ABC):
         self.read_records = arguments.read_records
         self.interval = arguments.interval
         self.missing_val = arguments.missing_val
-        self.delimiter = utils.read_delimiter(arguments.delimiter)
+        self.delimiter = read_delimiter(arguments.delimiter)
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -90,7 +91,7 @@ class AbstractCalculator(ABC):
                 DmLog.emit_event("Molecules do not seem to have 3D coordinates")
                 exit(1)
 
-        utils.expand_path(self.outfile)
+        expand_path(self.outfile)
 
         count = 0
         errors = 0
@@ -144,7 +145,8 @@ class AbstractCalculator(ABC):
             mol_column=self.mol_column,
         )
 
-        id_col_type, id_col_value = utils.is_type(self.id_column, int)
+        id_col_type, id_col_value = is_type(self.id_column, int)
+        reporter = ProgressReporter(self.interval)
 
         # read the input records and write the output
         while True:
@@ -168,8 +170,7 @@ class AbstractCalculator(ABC):
 
             count += 1
 
-            if self.interval and count % self.interval == 0:
-                DmLog.emit_event("Processed {} records".format(count))
+            reporter.report(count)
             if count % 50000 == 0:
                 # Emit a 'total' cost, replacing all prior costs
                 DmLog.emit_cost(count)
@@ -196,7 +197,7 @@ class AbstractCalculator(ABC):
                 values = self.calculate(biggest)
 
             except KeyboardInterrupt:
-                utils.log("Interrupted")
+                log("Interrupted")
                 sys.exit(0)
 
             except Exception as exc:
@@ -211,7 +212,7 @@ class AbstractCalculator(ABC):
         reader.close()
 
         t1 = time.time()
-        utils.log("Processing took {} secs".format(round(t1 - t0)))
+        log("Processing took {} secs".format(round(t1 - t0)))
 
 
 # def run(
@@ -242,7 +243,7 @@ class AbstractCalculator(ABC):
 #             DmLog.emit_event("Molecules do not seem to have 3D coordinates")
 #             exit(1)
 
-#     utils.expand_path(outfile)
+#     expand_path(outfile)
 
 #     count = 0
 #     errors = 0
@@ -294,7 +295,7 @@ class AbstractCalculator(ABC):
 #         mol_column=mol_column,
 #     )
 
-#     id_col_type, id_col_value = utils.is_type(id_column, int)
+#     id_col_type, id_col_value = is_type(id_column, int)
 
 #     # read the input records and write the output
 #     while True:
@@ -362,7 +363,7 @@ class AbstractCalculator(ABC):
 #             #     print(fp)
 
 #         except KeyboardInterrupt:
-#             utils.log("Interrupted")
+#             log("Interrupted")
 #             sys.exit(0)
 
 #         except Exception as exc:
@@ -377,7 +378,7 @@ class AbstractCalculator(ABC):
 #     reader.close()
 
 #     t1 = time.time()
-#     utils.log("Processing took {} secs".format(round(t1 - t0)))
+#     log("Processing took {} secs".format(round(t1 - t0)))
 
 
 # def _obsolete_main():
@@ -616,7 +617,7 @@ class AbstractCalculator(ABC):
 #     args = parser.parse_args()
 #     DmLog.emit_event("descriptor_calc: ", args)
 
-#     delimiter = utils.read_delimiter(args.delimiter)
+#     delimiter = read_delimiter(args.delimiter)
 
 #     if args.rdkfp_calc_rdkfp:
 #         rdkit_fingerprints = {
@@ -684,51 +685,14 @@ def get_base_parser():
     # ----- command line args definitions ---------------------------------------------
 
     parser = argparse.ArgumentParser(description="RDkit 2D descriptors")
-    input_group = parser.add_argument_group("Input/output options")
-    input_group.add_argument(
-        "-i", "--input", required=True, help="Input file (.smi or .sdf)"
-    )
-    input_group.add_argument(
-        "-o", "--output", default="descriptors2d.smi", help="Output file (.smi or .sdf"
-    )
-    input_group.add_argument(
-        "--omit-fields",
-        action="store_true",
-        help="Don't include fields from the input in the output",
-    )
-
     # to pass tab as the delimiter specify it as $'\t' or use one of
     # the symbolic names 'comma', 'tab', 'space' or 'pipe'
-    input_group.add_argument("-d", "--delimiter", help="Delimiter when using SMILES")
-    input_group.add_argument(
-        "--id-column",
-        help="Column for name field (zero based integer for .smi, text for SDF)",
+    rdkit_utils.add_common_molecule_io_args(
+        parser, output_default="descriptors2d.smi"
     )
-    input_group.add_argument(
-        "--mol-column",
-        type=int,
-        default=0,
-        help="Column index for molecule when using delineated text formats (zero based integer)",
-    )
-    input_group.add_argument(
-        "--read-header",
-        action="store_true",
-        help="Read a header line with the field names when reading .smi or .txt",
-    )
-    input_group.add_argument(
-        "--write-header",
-        action="store_true",
-        help="Write a header line when writing .smi or .txt",
-    )
-    input_group.add_argument(
-        "--read-records",
-        default=100,
-        type=int,
-        help="Read this many records to determine the fields that are present",
-    )
-    input_group.add_argument(
-        "--interval", default=1000, type=int, help="Reporting interval"
-    )
+    # this Job has always defaulted to reporting every 1000 records, and its
+    # manifest only passes --interval when the user sets it
+    add_reporting_args(parser, interval_default=1000)
 
     rdkit_generic_group = parser.add_argument_group("General RDKit options")
     rdkit_generic_group.add_argument(
@@ -752,7 +716,7 @@ def get_base_parser():
     return parser
 
 
-#     # delimiter = utils.read_delimiter(args.delimiter)
+#     # delimiter = read_delimiter(args.delimiter)
 
 
 #     # run(
