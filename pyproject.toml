@@ -12,11 +12,13 @@ readme = "README.md"
 python = "^3.13.7"
 im-data-manager-job-utilities = ">=1.4.0"
 im-standardize-molecule = ">=0.1.0"
-# mordredcommunity = ">=2.0.6"
-# rdkit = ">=2025.3.6"
-# something's wrong here, it cannot find a newer version??
-rdkit = "^2025.9.1"
-im-rdkit-utilities = ">=1.1.2"
+# The caret that used to be here (rdkit = "^2025.9.1") was not the problem it
+# looked like. RDKit uses CalVer, so '^2025.9.1' means '>=2025.9.1,<2026.0.0'
+# and does block 2026.x - but the reason a newer RDKit could not be found was
+# im-rdkit-utilities 1.1.2, which pinned 'rdkit == 2025.9.1' exactly. 1.2.0
+# relaxes that to '>=2026.3.6'.
+rdkit = ">=2026.3.6"
+im-rdkit-utilities = ">=1.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
