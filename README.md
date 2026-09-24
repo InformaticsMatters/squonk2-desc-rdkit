@@ -5,7 +5,7 @@ for a set of molecules. Three Jobs share one image:
 
 | Job | What it calculates |
 | --- | ------------------ |
-| `descriptor-generator` | 2D RDKit descriptors |
+| `rdkit-descriptor-generator` | 2D RDKit descriptors |
 | `rdkfp-generator` | RDKit fingerprints |
 | `morgan-fingerprint-generator` | Morgan fingerprints |
 

@@ -6,7 +6,7 @@ name: Calculate RDkit descriptors
 collection: im-virtual-screening
 
 jobs:
-  descriptor-generator:
+  rdkit-descriptor-generator:
     name: 2D RDKit descriptor calculator
     description: >-
       Generate Calculate RDKit descriptors and fingerprints
