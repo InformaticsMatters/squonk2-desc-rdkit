@@ -6,19 +6,19 @@ name: Calculate RDkit descriptors
 collection: im-virtual-screening
 
 jobs:
-  descriptor-generator:
+  rdkit-descriptor-generator:
     name: 2D RDKit descriptor calculator
     description: >-
       Generate Calculate RDKit descriptors and fingerprints
-    version: '1.0.0'
+    version: '1.1.0'
     category: comp chem
     keywords:
     - rdkit
     - descriptors
     - fingerprints
     image:
-      name: kaliif/rdkit-descriptors
-      tag: 'latest'
+      name: informaticsmatters/rdkit-descriptors
+      tag: '1.1.0'
       project-directory: /data
       working-directory: /data
       fix-permissions: true
@@ -143,14 +143,14 @@ jobs:
     name: RDKit Fingerprint calculator
     description: >-
       Generate Calculate RDKit fingerprints
-    version: '1.0.0'
+    version: '1.1.0'
     category: comp chem
     keywords:
     - rdkit
     - fingerprints
     image:
-      name: kaliif/rdkit-descriptors
-      tag: 'latest'
+      name: informaticsmatters/rdkit-descriptors
+      tag: '1.1.0'
       project-directory: /data
       working-directory: /data
       fix-permissions: true
@@ -340,15 +340,15 @@ jobs:
     name: Morgan fingerprint calculator
     description: >-
       Generate Calculate Morgan fingerprints
-    version: '1.0.0'
+    version: '1.1.0'
     category: comp chem
     keywords:
     - rdkit
     - descriptors
     - fingerprints
     image:
-      name: kaliif/rdkit-descriptors
-      tag: 'latest'
+      name: informaticsmatters/rdkit-descriptors
+      tag: '1.1.0'
       project-directory: /data
       working-directory: /data
       fix-permissions: true
