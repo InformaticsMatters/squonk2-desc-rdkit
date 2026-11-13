@@ -15,13 +15,16 @@
 # limitations under the License.
 
 
-# Generates rdkit descriptors for molecules.
+# Generates RDKit 2D descriptors for molecules, reproducing jaqpotpy 1.0.x.
+#
+# LEGACY branch: unlike `main` (which uses MolecularDescriptorCalculator), this
+# computes Ipc in its AVERAGED form (jaqpotpy did; the unaveraged value is
+# orders of magnitude larger). See jaqpot_featurizers.
 
 
 from dm_job_utilities.dm_log import DmLog
-from rdkit.Chem import Descriptors
-from rdkit.ML.Descriptors import MoleculeDescriptors
 
+import jaqpot_featurizers as jf
 from descriptor_generator import AbstractCalculator, get_base_parser
 
 
@@ -29,27 +32,51 @@ def main():
     # Usage:
     # python src/rdkit_descriptors.py -i data/10.smi -o descriptors-rdkit.smi -d tab --write-header
 
-    # ----- command line args definitions ---------------------------------------------
-
     parser = get_base_parser()
+    desc_group = parser.add_argument_group("RDKit descriptor options")
+    desc_group.add_argument(
+        "--no-fragment-descriptors",
+        action="store_true",
+        help="Exclude the fr_* fragment-count descriptors (jaqpotpy includes "
+        "them, which is the default here)",
+    )
+    desc_group.add_argument(
+        "--no-ipc-average",
+        action="store_true",
+        help="Compute Ipc unaveraged (jaqpotpy averages it, the default here)",
+    )
 
     args = parser.parse_args()
     DmLog.emit_event("descriptor_calc: ", args)
 
-    descriptors = [
-        d[0] for d in Descriptors._descList  # pylint: disable=protected-access
-    ]
-    desc_calculator = MoleculeDescriptors.MolecularDescriptorCalculator(
-        descriptors,
-        missing_val=args.missing_val,
-    )
+    use_fragment = not args.no_fragment_descriptors
+    ipc_avg = not args.no_ipc_average
+    # a missing_val of None keeps an empty cell; the predictor fills it
+    missing_val = args.missing_val
+
+    names = jf.rdkit_descriptor_names(use_fragment=use_fragment)
 
     class DescriptorCalculator(AbstractCalculator):
-        calculator = desc_calculator.CalcDescriptors
-        descriptor_names = descriptors
+        calculator = staticmethod(jf.rdkit_descriptor_values)
+        descriptor_names = names
+        manifest_name = jf.RDKIT_DESCRIPTORS
+        binary_output = False
+
+        def calculate(self, *calc_args):
+            mol = calc_args[0]
+            return jf.rdkit_descriptor_values(
+                mol,
+                use_fragment=use_fragment,
+                ipc_avg=ipc_avg,
+                missing_val=missing_val,
+            )
+
+        def manifest_params(self):
+            return jf.rdkit_descriptor_params(
+                use_fragment=use_fragment, ipc_avg=ipc_avg
+            )
 
     calc = DescriptorCalculator(args)
-    print("got calc", calc)
     calc.run()
 
 

@@ -8,17 +8,23 @@ authors = [
 ]
 readme = "README.md"
 
+# This is the LEGACY-environment branch. It exists to reproduce the
+# descriptors of pre-trained jaqpotpy 1.0.x models, which were computed with
+# rdkit 2023.9.6 / numpy 1.26. Newer rdkit silently changes descriptor values
+# (see docs in the predictor repo), so this branch pins the exact old rdkit
+# and the featurizers reproduce jaqpotpy's calls bit-for-bit. Do NOT bump
+# these to match `main`; `main` is the current-library line.
 [tool.poetry.dependencies]
-python = "^3.13.7"
+# rdkit 2023.9.6 has no wheels beyond Python 3.12; 3.11 is the agreed floor.
+python = ">=3.11,<3.13"
 im-data-manager-job-utilities = ">=1.4.0"
 im-standardize-molecule = ">=0.1.0"
-# The caret that used to be here (rdkit = "^2025.9.1") was not the problem it
-# looked like. RDKit uses CalVer, so '^2025.9.1' means '>=2025.9.1,<2026.0.0'
-# and does block 2026.x - but the reason a newer RDKit could not be found was
-# im-rdkit-utilities 1.1.2, which pinned 'rdkit == 2025.9.1' exactly. 1.2.0
-# relaxes that to '>=2026.3.6'.
-rdkit = ">=2026.3.6"
-im-rdkit-utilities = ">=1.2.0"
+rdkit = "2023.9.6"
+numpy = "^1.26.4"
+# im-rdkit-utilities <= 1.2.0 floored rdkit at 2025.9.1 / 2026.3.6; 1.2.1
+# relaxed the floor to rdkit >= 2023.9.6 (it uses only long-stable rdkit APIs),
+# which is what lets this legacy branch pin the old rdkit.
+im-rdkit-utilities = ">=1.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -28,6 +34,10 @@ pylint = "^3"
 isort = "^5.13.2"
 black = "^24.8.0"
 mypy = "^1.11.1"
+pytest = "^8"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 
 [build-system]

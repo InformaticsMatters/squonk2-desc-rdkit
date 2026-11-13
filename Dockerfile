@@ -1,5 +1,7 @@
 # ---- base python ----
-FROM python:3.13.9-slim-trixie as python-base
+# LEGACY branch: rdkit 2023.9.6 has no wheels beyond Python 3.12, so this
+# image is built on 3.12 (not 3.13 like main).
+FROM python:3.12-slim-trixie as python-base
 
 ENV PYTHONUNBUFFERED=1
 ENV HOME=/code
@@ -25,7 +27,7 @@ FROM python-base as final
 
 COPY --from=poetry-base /.venv /.venv
 
-ENV PYTHONPATH="${PYTHONPATH}:/.venv/lib/python3.13/site-packages/"
+ENV PYTHONPATH="${PYTHONPATH}:/.venv/lib/python3.12/site-packages/"
 ENV PATH=/.venv/bin:$PATH
 
 
