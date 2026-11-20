@@ -20,7 +20,7 @@ jobs:
     - descriptors
     - fingerprints
     image:
-      name: informaticsmatters/rdkit-descriptors
+      name: kaliif/rdkit-descriptors
       tag: 'legacy'
       project-directory: /data
       working-directory: /data
@@ -163,7 +163,7 @@ jobs:
     - rdkit
     - fingerprints
     image:
-      name: informaticsmatters/rdkit-descriptors
+      name: kaliif/rdkit-descriptors
       tag: 'legacy'
       project-directory: /data
       working-directory: /data
@@ -365,7 +365,7 @@ jobs:
     - descriptors
     - fingerprints
     image:
-      name: informaticsmatters/rdkit-descriptors
+      name: kaliif/rdkit-descriptors
       tag: 'legacy'
       project-directory: /data
       working-directory: /data
@@ -541,7 +541,7 @@ jobs:
     - maccs
     - fingerprints
     image:
-      name: informaticsmatters/rdkit-descriptors
+      name: kaliif/rdkit-descriptors
       tag: 'legacy'
       project-directory: /data
       working-directory: /data
