@@ -9,7 +9,7 @@ jobs:
   rdkit-descriptor-generator:
     name: 2D RDKit descriptor calculator (legacy, rdkit 2023.9.6)
     description: >-
-      Calculate RDKit 2D descriptors, reproducing jaqpotpy 1.0.x (including the
+      Calculate RDKit 2D descriptors, reproducing the legacy library versions (including the
       averaged Ipc) so pre-trained legacy models can be served. Writes a sidecar
       manifest (.manifest.json) the predictor checks against the model. For
       exact legacy reproduction use fragment method 'none'.
@@ -73,6 +73,12 @@ jobs:
             - chemical/x-mdl-sdfile
             - squonk/x-smiles
             creates: '{{ outputFile }}'
+            type: file
+          manifestFile:
+            title: Descriptor manifest
+            mime-types:
+            - application/json
+            creates: '{{ (outputFile[:-3] if outputFile.endswith(".gz") else outputFile).rsplit(".", 1)[0] }}.manifest.json'
             type: file
       options:
         type: object
@@ -142,10 +148,13 @@ jobs:
             checks:
             - exists: true
             - lineCount: 11
+          - name: descriptors-rdkit.manifest.json
+            checks:
+            - exists: true
   rdkfp-generator:
     name: RDKit Fingerprint calculator (legacy, rdkit 2023.9.6)
     description: >-
-      Calculate RDKit path fingerprints. Note: no legacy jaqpotpy model uses
+      Calculate RDKit path fingerprints. Note: no legacy model uses
       this fingerprint, so this job writes no manifest and is not part of the
       legacy reproduction set; it is kept for completeness.
     version: '1.0.0'
@@ -344,7 +353,7 @@ jobs:
   morgan-fingerprint-generator:
     name: Morgan fingerprint calculator (legacy, rdkit 2023.9.6)
     description: >-
-      Calculate Morgan fingerprints, reproducing jaqpotpy 1.0.x (radius 2,
+      Calculate Morgan fingerprints, reproducing the legacy library versions (radius 2,
       GetMorganFingerprintAsBitVect, bond types) so pre-trained legacy models
       can be served. Writes a single bit-string column and a sidecar manifest
       (.manifest.json) the predictor checks. For exact legacy reproduction use
@@ -420,6 +429,12 @@ jobs:
             - squonk/x-smiles
             creates: '{{ outputFile }}'
             type: file
+          manifestFile:
+            title: Descriptor manifest
+            mime-types:
+            - application/json
+            creates: '{{ (outputFile[:-3] if outputFile.endswith(".gz") else outputFile).rsplit(".", 1)[0] }}.manifest.json'
+            type: file
       options:
         type: object
         required:
@@ -488,7 +503,7 @@ jobs:
             type: boolean
             default: false
           morganfpNoBondTypes:
-            title: Do NOT include bond types in the bond invariants (jaqpotpy includes them)
+            title: Do NOT include bond types in the bond invariants (included by default)
             type: boolean
             default: false
           morganfpUseFeatures:
@@ -509,10 +524,13 @@ jobs:
             checks:
             - exists: true
             - lineCount: 11
+          - name: descriptors-morgan.manifest.json
+            checks:
+            - exists: true
   maccs-keys-generator:
     name: MACCS keys calculator (legacy, rdkit 2023.9.6)
     description: >-
-      Calculate 167-bit MACCS keys, reproducing jaqpotpy 1.0.x so pre-trained
+      Calculate 167-bit MACCS keys, reproducing the legacy library versions so pre-trained
       legacy models can be served. Writes a single MACCSKeys bit-string column
       and a sidecar manifest (.manifest.json) the predictor checks. For exact
       legacy reproduction use fragment method 'none'.
@@ -522,7 +540,6 @@ jobs:
     - rdkit
     - maccs
     - fingerprints
-    - jaqpot
     image:
       name: informaticsmatters/rdkit-descriptors
       tag: 'legacy'
@@ -577,6 +594,12 @@ jobs:
             - chemical/x-mdl-sdfile
             - squonk/x-smiles
             creates: '{{ outputFile }}'
+            type: file
+          manifestFile:
+            title: Descriptor manifest
+            mime-types:
+            - application/json
+            creates: '{{ (outputFile[:-3] if outputFile.endswith(".gz") else outputFile).rsplit(".", 1)[0] }}.manifest.json'
             type: file
       options:
         type: object
@@ -647,6 +670,9 @@ jobs:
             checks:
             - exists: true
             - lineCount: 11
+          - name: descriptors-maccs.manifest.json
+            checks:
+            - exists: true
   # descriptor-generator:
   #   name: 2D/3D RDKit descriptor calculator
   #   description: >-
