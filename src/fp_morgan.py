@@ -110,10 +110,23 @@ def main():
         descriptor_names = [
             "MorganFingerprint",
         ]
+        manifest_name = "morgan"
+        binary_output = True
 
         def calculate(self, *args):
             result = self.calculator(*args)
             return (result.ToBitString(),)
+
+        # the value-affecting parameters the predictor checks against the
+        # model; keys match the predictor's morgan featurizer
+        def manifest_params(self):
+            return {
+                "radius": args.morganfp_radius,
+                "n_bits": args.morganfp_size,
+                "chiral": args.morganfp_use_chirality,
+                "bond_types": args.morganfp_use_bond_types,
+                "feature_invariants": False,
+            }
 
     calc = MorganFPCalculator(args)
     calc.run()

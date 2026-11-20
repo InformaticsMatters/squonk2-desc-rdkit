@@ -10,7 +10,7 @@ jobs:
     name: 2D RDKit descriptor calculator
     description: >-
       Generate Calculate RDKit descriptors and fingerprints
-    version: '1.1.0'
+    version: '1.1.1'
     category: comp chem
     keywords:
     - rdkit
@@ -70,6 +70,12 @@ jobs:
             - chemical/x-mdl-sdfile
             - squonk/x-smiles
             creates: '{{ outputFile }}'
+            type: file
+          manifestFile:
+            title: Descriptor manifest
+            mime-types:
+            - application/json
+            creates: '{{ (outputFile[:-3] if outputFile.endswith(".gz") else outputFile).rsplit(".", 1)[0] }}.manifest.json'
             type: file
       options:
         type: object
@@ -139,11 +145,14 @@ jobs:
             checks:
             - exists: true
             - lineCount: 11
+          - name: descriptors-rdkit.manifest.json
+            checks:
+            - exists: true
   rdkfp-generator:
     name: RDKit Fingerprint calculator
     description: >-
       Generate Calculate RDKit fingerprints
-    version: '1.1.0'
+    version: '1.1.1'
     category: comp chem
     keywords:
     - rdkit
@@ -340,7 +349,7 @@ jobs:
     name: Morgan fingerprint calculator
     description: >-
       Generate Calculate Morgan fingerprints
-    version: '1.1.0'
+    version: '1.1.1'
     category: comp chem
     keywords:
     - rdkit
@@ -418,6 +427,12 @@ jobs:
             - chemical/x-mdl-sdfile
             - squonk/x-smiles
             creates: '{{ outputFile }}'
+            type: file
+          manifestFile:
+            title: Descriptor manifest
+            mime-types:
+            - application/json
+            creates: '{{ (outputFile[:-3] if outputFile.endswith(".gz") else outputFile).rsplit(".", 1)[0] }}.manifest.json'
             type: file
       options:
         type: object
@@ -524,6 +539,9 @@ jobs:
             checks:
             - exists: true
             - lineCount: 11
+          - name: descriptors-morgan.manifest.json
+            checks:
+            - exists: true
   # descriptor-generator:
   #   name: 2D/3D RDKit descriptor calculator
   #   description: >-

@@ -47,9 +47,14 @@ def main():
     class DescriptorCalculator(AbstractCalculator):
         calculator = desc_calculator.CalcDescriptors
         descriptor_names = descriptors
+        manifest_name = "rdkit_descriptors"
+
+        # main computes the full descList (fragment descriptors included) with
+        # the standard (non-averaged) Ipc; the predictor checks these
+        def manifest_params(self):
+            return {"use_fragment": True, "ipc_avg": False}
 
     calc = DescriptorCalculator(args)
-    print("got calc", calc)
     calc.run()
 
 

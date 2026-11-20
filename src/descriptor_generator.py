@@ -16,23 +16,48 @@
 # Generates rdkit descriptors for molecules.
 
 import argparse
+import json
+import os
 import sys
 import time
 from abc import ABC
-from typing import Callable
+from typing import Callable, Optional
 
+import numpy
+import rdkit
+import rdkit_utils
 from dm_job_utilities.cli import ProgressReporter, add_reporting_args
 from dm_job_utilities.dm_log import DmLog
 from dm_job_utilities.utils import expand_path, is_type, log, read_delimiter
 from rdkit import Chem
 
-import rdkit_utils
+MANIFEST_SCHEMA_VERSION = 1
+
+
+def manifest_path(outfile: str) -> str:
+    """The sidecar manifest path for a descriptor file, matching how the
+    predictor looks for it: the final extension (and a trailing ``.gz``) is
+    replaced by ``.manifest.json`` (``foo.smi`` -> ``foo.manifest.json``,
+    ``foo.smi.gz`` -> ``foo.manifest.json``)."""
+    stem = outfile
+    if stem.endswith(".gz"):
+        stem = stem[: -len(".gz")]
+    stem, _ = os.path.splitext(stem)
+    return stem + ".manifest.json"
 
 
 class AbstractCalculator(ABC):
 
     calculator: Callable
     descriptor_names: list[str]
+    # The predictor-side featurizer name this job's output reproduces (one of
+    # "morgan", "rdkit_descriptors"), written into the sidecar manifest so the
+    # predictor can check the file suits the model. None means "don't write a
+    # manifest" (e.g. the RDKit path fingerprint, which no model consumes).
+    manifest_name: Optional[str] = None
+    # fingerprints write a single 0/1 bit-string column, so the manifest's
+    # default missing value is 0; real-valued descriptor jobs leave it null.
+    binary_output: bool = False
 
     def __init__(self, arguments):
         self.filename = arguments.input
@@ -61,6 +86,70 @@ class AbstractCalculator(ABC):
     # fingerprints)
     def calculate(self, *args):
         return self.calculator(*args)
+
+    # override to record the value-affecting featurizer parameters (e.g. Morgan
+    # radius / bits) in the manifest; the predictor checks these strictly.
+    def manifest_params(self) -> dict:
+        return {}
+
+    def _is_sdf_output(self) -> bool:
+        return self.outfile.endswith(".sdf") or self.outfile.endswith(".sdf.gz")
+
+    def write_manifest(self) -> None:
+        """Write the sidecar manifest describing the descriptor file, so the
+        predictor can check the file fits the model (featurizer, parameters,
+        library versions, fragment method) instead of trusting column names.
+        A None ``missing_val`` is reported as 0 for binary fingerprints (an
+        unset bit is 0) and as null otherwise."""
+        if self.manifest_name is None:
+            return
+
+        # name the id column exactly as generate_headers/the writer names it in
+        # the output, since the predictor matches columns by name:
+        #  - an integer index or "_Name" becomes the ID_COL_NAME header ("ID")
+        #  - a named SDF field keeps its own name
+        #  - no id column at all: the SMILES column labels each row (text), or
+        #    the record name for an SDF
+        id_is_int, _ = is_type(self.id_column, int)
+        if self.id_column is None:
+            id_column = (
+                "_Name" if self._is_sdf_output() else rdkit_utils.SMILES_COL_NAME
+            )
+        elif id_is_int or self.id_column == "_Name":
+            id_column = rdkit_utils.ID_COL_NAME
+        else:
+            id_column = self.id_column
+
+        if self._is_sdf_output():
+            # descriptors are SDF fields; there is no SMILES column
+            smiles_column: Optional[str] = None
+        else:
+            smiles_column = rdkit_utils.SMILES_COL_NAME
+
+        missing_value = self.missing_val
+        if missing_value is None:
+            missing_value = 0 if self.binary_output else None
+
+        manifest = {
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+            "featurizer": {
+                "name": self.manifest_name,
+                "params": self.manifest_params(),
+            },
+            "columns": list(self.descriptor_names),
+            "id_column": id_column,
+            "smiles_column": smiles_column,
+            "fragment_method": self.mode,
+            "library_versions": {
+                "rdkit": rdkit.__version__,
+                "numpy": numpy.__version__,
+            },
+            "missing_value": missing_value,
+        }
+        path = manifest_path(self.outfile)
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(manifest, handle, indent=2)
+        DmLog.emit_event("Wrote descriptor manifest to {}".format(path))
 
     def run(
         self,
@@ -210,6 +299,8 @@ class AbstractCalculator(ABC):
 
         writer.close()
         reader.close()
+
+        self.write_manifest()
 
         t1 = time.time()
         log("Processing took {} secs".format(round(t1 - t0)))
@@ -687,9 +778,7 @@ def get_base_parser():
     parser = argparse.ArgumentParser(description="RDkit 2D descriptors")
     # to pass tab as the delimiter specify it as $'\t' or use one of
     # the symbolic names 'comma', 'tab', 'space' or 'pipe'
-    rdkit_utils.add_common_molecule_io_args(
-        parser, output_default="descriptors2d.smi"
-    )
+    rdkit_utils.add_common_molecule_io_args(parser, output_default="descriptors2d.smi")
     # this Job has always defaulted to reporting every 1000 records, and its
     # manifest only passes --interval when the user sets it
     add_reporting_args(parser, interval_default=1000)
