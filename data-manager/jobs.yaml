@@ -13,7 +13,7 @@ jobs:
       averaged Ipc) so pre-trained legacy models can be served. Writes a sidecar
       manifest (.manifest.json) the predictor checks against the model. For
       exact legacy reproduction use fragment method 'none'.
-    version: '1.0.0'
+    version: '1.0.1'
     category: comp chem
     keywords:
     - rdkit
@@ -157,7 +157,7 @@ jobs:
       Calculate RDKit path fingerprints. Note: no legacy model uses
       this fingerprint, so this job writes no manifest and is not part of the
       legacy reproduction set; it is kept for completeness.
-    version: '1.0.0'
+    version: '1.0.1'
     category: comp chem
     keywords:
     - rdkit
@@ -358,7 +358,7 @@ jobs:
       can be served. Writes a single bit-string column and a sidecar manifest
       (.manifest.json) the predictor checks. For exact legacy reproduction use
       fragment method 'none'.
-    version: '1.0.0'
+    version: '1.0.1'
     category: comp chem
     keywords:
     - rdkit
@@ -534,7 +534,7 @@ jobs:
       legacy models can be served. Writes a single MACCSKeys bit-string column
       and a sidecar manifest (.manifest.json) the predictor checks. For exact
       legacy reproduction use fragment method 'none'.
-    version: '1.0.0'
+    version: '1.0.1'
     category: comp chem
     keywords:
     - rdkit
@@ -677,7 +677,7 @@ jobs:
   #   name: 2D/3D RDKit descriptor calculator
   #   description: >-
   #     Generate Calculate RDKit descriptors and fingerprints
-  #   version: '1.0.0'
+  #   version: '1.0.1'
   #   category: comp chem
   #   keywords:
   #   - rdkit
